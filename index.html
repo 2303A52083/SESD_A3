@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Resume Builder — Single HTML/CSS File</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0c10;          /* page bg */
+      --panel:#111217;       /* left panel */
+      --ink:#e8eaf0;         /* text */
+      --muted:#b5bdd1;       /* muted text */
+      --brand:#8ab4ff;       /* accent */
+      --chip:#1a1c24;        /* chip bg */
+      --card:#0f1117;        /* preview card */
+      --border:#22232c;      /* borders */
+      --good:#7ae29b;
+      --bad:#ff8a8a;
+      --paper:#ffffff;       /* resume paper (print) */
+      --paper-ink:#1b1f24;   /* resume ink (print) */
+    }
+    /* Light theme */
+    .light{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --ink:#14161a;
+      --muted:#5b657a;
+      --brand:#335cff;
+      --chip:#eef1f9;
+      --card:#ffffff;
+      --border:#e7eaf2;
+      --paper:#ffffff;
+      --paper-ink:#111318;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Arial,Helvetica,sans-serif;
+      color:var(--ink);
+      background:linear-gradient(120deg, var(--bg), #08090d 60%);
+    }
+
+    .app{
+      display:grid;
+      grid-template-columns: 380px 1fr;
+      gap:22px;
+      padding:20px;
+      min-height:100dvh;
+    }
+
+    .panel{
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:16px 16px 90px;
+      position:relative;
+      overflow:auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+
+    .panel h2{
+      margin:0 0 12px;
+      font-size:18px;
+      letter-spacing:.2px;
+    }
+
+    .toolbar{
+      display:flex;
+      gap:8px;
+      position:sticky;
+      top:0;
+      background:var(--panel);
+      padding:12px 0 14px;
+      z-index:2;
+    }
+    .toolbar .btn{
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--border);
+      background:var(--chip);
+      color:var(--ink);
+      cursor:pointer;
+      font-weight:600;
+    }
+
+    .section{margin:14px 0 18px}
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .row-3{display:grid; grid-template-columns: 1.2fr .9fr .9fr; gap:10px}
+    label{display:block; font-size:12px; color:var(--muted); margin:10px 0 6px}
+    input, textarea, select{
+      width:100%;
+      padding:11px 12px;
+      border-radius:12px;
+      background:#0c0e13;
+      color:var(--ink);
+      border:1px solid var(--border);
+      outline:none;
+    }
+    .light input,.light textarea,.light select{background:#f6f8fe}
+    textarea{min-height:88px; resize:vertical}
+
+    .chipbar{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{
+      background:var(--chip);
+      padding:8px 10px;
+      border:1px dashed var(--border);
+      border-radius:999px; font-size:12px
+    }
+
+    .addline{margin-top:10px}
+    .addline .btn{background:none}
+
+    .danger{border-color:#ffb3b3 !important; color:#ffb3b3}
+
+    /* Preview */
+    .preview-wrap{
+      position:relative;
+    }
+    .preview-toolbar{
+      position:sticky; top:0; display:flex; gap:10px; justify-content:flex-end;
+      padding:8px; z-index:3;
+    }
+    .ghost{
+      background:transparent; border:1px solid var(--border); color:var(--ink);
+      padding:10px 12px; border-radius:12px; cursor:pointer; font-weight:600
+    }
+    .primary{ background:var(--brand); color:#0a0c14; border:none }
+
+    .paper{
+      background:var(--paper);
+      color:var(--paper-ink);
+      width:816px; /* US Letter 96dpi */
+      min-height:1056px;
+      margin:10px auto 30px;
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.35);
+      border:1px solid var(--border);
+      padding:36px 40px;
+    }
+
+    .r-header{display:flex; gap:14px; align-items:center; border-bottom:2px solid rgba(0,0,0,.06); padding-bottom:16px; margin-bottom:14px}
+    .avatar{
+      width:86px; height:86px; border-radius:14px; background:linear-gradient(135deg,#dfe7ff,#c7f5d1);
+      display:grid; place-items:center; font-weight:800; font-size:26px; color:#1a1e23;
+    }
+    .r-name{font-size:28px; font-weight:800; letter-spacing:.3px}
+    .r-title{color:#5a6376; font-weight:600; margin-top:2px}
+    .r-contact{margin-top:8px; color:#5a6376; font-size:13px}
+    .r-contact span{margin-right:12px}
+
+    .r-section{margin-top:16px}
+    .r-section h3{margin:0 0 6px; font-size:14px; letter-spacing:.4px; text-transform:uppercase; color:#575f71}
+    .r-summary{line-height:1.6}
+
+    .item{margin:10px 0}
+    .item .top{display:flex; justify-content:space-between; font-weight:700}
+    .item .meta{font-size:12px; color:#687086}
+    .bullets{margin:6px 0 0 18px}
+    .bullets li{margin:3px 0}
+
+    .tags{display:flex; flex-wrap:wrap; gap:8px; margin-top:6px}
+    .tags .t{background:#eef2ff; color:#2b3180; padding:5px 8px; border-radius:999px; font-size:12px}
+
+    .footer-note{position:absolute; bottom:12px; left:16px; right:16px; display:flex; justify-content:space-between; color:var(--muted); font-size:12px}
+
+    /* Print: hide UI, print A4 */
+    @page{ size:A4; margin:12mm }
+    @media print{
+      body{ background:#fff }
+      .app{ display:block; padding:0 }
+      .panel, .preview-toolbar, .footer-note{ display:none !important }
+      .paper{ box-shadow:none; margin:0; width:auto; min-height:auto; border:none; padding:0 }
+    }
+  </style>
+</head>
+<body class="light" id="body">
+  <div class="app">
+    <!-- Left: Controls -->
+    <aside class="panel" id="panel">
+      <div class="toolbar">
+        <button class="btn" id="themeBtn" title="Toggle theme">🌗 Theme</button>
+        <button class="btn" id="resetBtn" title="Clear all">♻️ Reset</button>
+      </div>
+
+      <h2>Basics</h2>
+      <div class="section">
+        <label>Full Name</label>
+        <input id="name" placeholder="e.g., Syed Murtaza" value="Syed Murtaza">
+        <label>Headline / Title</label>
+        <input id="title" placeholder="e.g., Frontend Developer" value="Student • Cybersecurity Enthusiast">
+        <div class="row">
+          <div>
+            <label>Email</label>
+            <input id="email" placeholder="you@example.com" value="syed@email.com">
+          </div>
+          <div>
+            <label>Phone</label>
+            <input id="phone" placeholder="+91 90000 00000" value="+91 90000 00000">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Location</label>
+            <input id="location" placeholder="City, Country" value="Hyderabad, India">
+          </div>
+          <div>
+            <label>Website / LinkedIn</label>
+            <input id="website" placeholder="https://..." value="linkedin.com/in/syed">
+          </div>
+        </div>
+        <label>Professional Summary</label>
+        <textarea id="summary" placeholder="2–3 lines about you">BTech student with hands-on projects in networks, OS, and cybersecurity. Keen on building clean UIs and solving real problems.</textarea>
+      </div>
+
+      <h2>Skills</h2>
+      <div class="section">
+        <label>Comma-separated</label>
+        <input id="skills" placeholder="HTML, CSS, JS, C, Python" value="HTML, CSS, JavaScript, C, Python, Networking, Linux, Git">
+      </div>
+
+      <h2>Experience</h2>
+      <div id="expList"></div>
+      <div class="addline"><button class="btn" id="addExp">➕ Add experience</button></div>
+
+      <h2>Education</h2>
+      <div id="eduList"></div>
+      <div class="addline"><button class="btn" id="addEdu">➕ Add education</button></div>
+
+      <h2>Projects</h2>
+      <div id="projList"></div>
+      <div class="addline"><button class="btn" id="addProj">➕ Add project</button></div>
+
+      <div class="footer-note">
+        <span>Tip: Use “Download PDF” on the right.</span>
+        <span>Made with ❤ — HTML/CSS</span>
+      </div>
+    </aside>
+
+    <!-- Right: Preview -->
+    <main class="preview-wrap">
+      <div class="preview-toolbar">
+        <button class="ghost" id="exportHtml">Export HTML</button>
+        <button class="ghost" id="downloadPdf">Download PDF</button>
+      </div>
+
+      <section class="paper" id="paper" aria-label="Resume Preview">
+        <header class="r-header">
+          <div class="avatar" id="avatar">SM</div>
+          <div>
+            <div class="r-name" id="p-name">Your Name</div>
+            <div class="r-title" id="p-title">Your Title</div>
+            <div class="r-contact" id="p-contact"></div>
+          </div>
+        </header>
+
+        <section class="r-section">
+          <h3>Summary</h3>
+          <div class="r-summary" id="p-summary"></div>
+        </section>
+
+        <section class="r-section" id="p-skills-wrap">
+          <h3>Skills</h3>
+          <div class="tags" id="p-skills"></div>
+        </section>
+
+        <section class="r-section" id="p-exp-wrap">
+          <h3>Experience</h3>
+          <div id="p-exp"></div>
+        </section>
+
+        <section class="r-section" id="p-edu-wrap">
+          <h3>Education</h3>
+          <div id="p-edu"></div>
+        </section>
+
+        <section class="r-section" id="p-proj-wrap">
+          <h3>Projects</h3>
+          <div id="p-proj"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <template id="expTemplate">
+    <div class="section exp-item">
+      <div class="row">
+        <div>
+          <label>Company</label>
+          <input placeholder="Company" class="company">
+        </div>
+        <div>
+          <label>Role</label>
+          <input placeholder="Role" class="role">
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label>Location</label>
+          <input placeholder="City" class="place">
+        </div>
+        <div>
+          <label>Start</label>
+          <input placeholder="Jan 2024" class="start">
+        </div>
+        <div>
+          <label>End</label>
+          <input placeholder="Present" class="end">
+        </div>
+      </div>
+      <label>Highlights (• one per line)</label>
+      <textarea class="bullets" placeholder="Built ...\nImproved ...\nCollaborated ..."></textarea>
+      <div class="addline">
+        <button class="btn danger remove">🗑 Remove</button>
+      </div>
+      <hr style="border:0; border-top:1px solid var(--border); margin:12px 0 0">
+    </div>
+  </template>
+
+  <template id="eduTemplate">
+    <div class="section edu-item">
+      <div class="row">
+        <div>
+          <label>Institution</label>
+          <input placeholder="University" class="school">
+        </div>
+        <div>
+          <label>Degree</label>
+          <input placeholder="BTech CSE" class="degree">
+        </div>
+      </div>
+      <div class="row-3">
+        <div>
+          <label>Location</label>
+          <input placeholder="City" class="place">
+        </div>
+        <div>
+          <label>Start</label>
+          <input placeholder="2022" class="start">
+        </div>
+        <div>
+          <label>End</label>
+          <input placeholder="2026" class="end">
+        </div>
+      </div>
+      <label>Notes (optional)</label>
+      <textarea class="notes" placeholder="CGPA, coursework, awards ..."></textarea>
+      <div class="addline">
+        <button class="btn danger remove">🗑 Remove</button>
+      </div>
+      <hr style="border:0; border-top:1px solid var(--border); margin:12px 0 0">
+    </div>
+  </template>
+
+  <template id="projTemplate">
+    <div class="section proj-item">
+      <div class="row">
+        <div>
+          <label>Project</label>
+          <input placeholder="Project name" class="pname">
+        </div>
+        <div>
+          <label>Link</label>
+          <input placeholder="URL (optional)" class="plink">
+        </div>
+      </div>
+      <label>Description (• one per line)</label>
+      <textarea class="bullets" placeholder="What it does ...\nTech used ...\nImpact ..."></textarea>
+      <div class="addline">
+        <button class="btn danger remove">🗑 Remove</button>
+      </div>
+      <hr style="border:0; border-top:1px solid var(--border); margin:12px 0 0">
+    </div>
+  </template>
+
+  <script>
+    const $ = (sel,root=document)=>root.querySelector(sel);
+    const $$ = (sel,root=document)=>Array.from(root.querySelectorAll(sel));
+
+    const state = { exp:[], edu:[], proj:[] };
+
+    function init(){
+      // Prefill one block each
+      addExp({company:"Open Source Club", role:"Web Lead", place:"Campus", start:"Jan 2025", end:"Present", bullets:["Led 6 members to revamp website","Cut page load by 42%","Built CI pipeline"]});
+      addEdu({school:"SR University", degree:"BTech CSE", place:"Warangal", start:"2023", end:"2027", notes:"CGPA 8.5; Courses: DBMS, Networks"});
+      addProj({pname:"Farm2table", plink:"", bullets:["Responsive grocery website","Admin dashboard & carts","HTML, CSS, JS"]});
+
+      // Hook inputs
+      ["name","title","email","phone","location","website","summary","skills"].forEach(id=>{
+        const el = document.getElementById(id);
+        el.addEventListener('input', render);
+      });
+      render();
+
+      // Theme
+      document.getElementById('themeBtn').onclick = ()=>{
+        document.body.classList.toggle('light');
+      };
+      document.getElementById('resetBtn').onclick = ()=>{
+        if(!confirm('Clear all fields?')) return;
+        localStorage.clear(); location.reload();
+      };
+
+      // Add buttons
+      document.getElementById('addExp').onclick = ()=> addExp();
+      document.getElementById('addEdu').onclick = ()=> addEdu();
+      document.getElementById('addProj').onclick = ()=> addProj();
+
+      // Export
+      document.getElementById('downloadPdf').onclick = ()=> window.print();
+      document.getElementById('exportHtml').onclick = exportHTML;
+
+      // Persist
+      loadFromStorage();
+      setInterval(saveToStorage, 1200);
+    }
+
+    function initials(name){
+      return name.split(/\s+/).filter(Boolean).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    }
+
+    function linesToList(text){
+      const arr = text.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+      if(!arr.length) return '';
+      return '<ul class="bullets">'+arr.map(s=>`<li>${escapeHtml(s)}</li>`).join('')+'</ul>';
+    }
+
+    function escapeHtml(str){
+      return str.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+    }
+
+    function render(){
+      const name = $('#name').value.trim() || 'Your Name';
+      const title = $('#title').value.trim() || 'Your Title';
+      const email = $('#email').value.trim();
+      const phone = $('#phone').value.trim();
+      const loc = $('#location').value.trim();
+      const web = $('#website').value.trim();
+      const summary = $('#summary').value.trim();
+      const skills = $('#skills').value.split(',').map(s=>s.trim()).filter(Boolean);
+
+      $('#avatar').textContent = initials(name);
+      $('#p-name').textContent = name;
+      $('#p-title').textContent = title;
+      $('#p-contact').innerHTML = [email, phone, loc, web].filter(Boolean).map(x=>`<span>${escapeHtml(x)}</span>`).join('');
+      $('#p-summary').textContent = summary;
+
+      const sk = $('#p-skills');
+      sk.innerHTML = '';
+      skills.forEach(s=>{
+        const tag = document.createElement('span'); tag.className='t'; tag.textContent = s; sk.appendChild(tag);
+      });
+
+      // Experience
+      const expHtml = state.exp.map(getExpData).filter(Boolean).map(e=>{
+        return `<div class="item">
+          <div class="top"><span>${escapeHtml(e.role)} — ${escapeHtml(e.company)}</span><span class="meta">${escapeHtml(e.start)} – ${escapeHtml(e.end)}</span></div>
+          <div class="meta">${escapeHtml(e.place)}</div>
+          ${linesToList(e.bullets)}
+        </div>`;
+      }).join('');
+      $('#p-exp').innerHTML = expHtml || '<div class="meta">Add your experience from the left.</div>';
+
+      // Education
+      const eduHtml = state.edu.map(getEduData).filter(Boolean).map(e=>{
+        return `<div class="item">
+          <div class="top"><span>${escapeHtml(e.degree)} — ${escapeHtml(e.school)}</span><span class="meta">${escapeHtml(e.start)} – ${escapeHtml(e.end)}</span></div>
+          <div class="meta">${escapeHtml(e.place)}</div>
+          ${ e.notes ? `<div class="meta" style="margin-top:6px">${escapeHtml(e.notes)}</div>`: ''}
+        </div>`;
+      }).join('');
+      $('#p-edu').innerHTML = eduHtml || '<div class="meta">Add your education from the left.</div>';
+
+      // Projects
+      const projHtml = state.proj.map(getProjData).filter(Boolean).map(p=>{
+        const header = p.plink ? `<a href="${escapeHtml(p.plink)}" target="_blank" rel="noopener">${escapeHtml(p.pname)}</a>` : escapeHtml(p.pname);
+        return `<div class="item">
+          <div class="top"><span>${header}</span></div>
+          ${linesToList(p.bullets)}
+        </div>`;
+      }).join('');
+      $('#p-proj').innerHTML = projHtml || '<div class="meta">Add your projects from the left.</div>';
+    }
+
+    function addExp(pref={}){
+      const t = $('#expTemplate').content.cloneNode(true);
+      const wrap = document.createElement('div');
+      wrap.appendChild(t);
+      const node = wrap.firstElementChild;
+      $('#expList').appendChild(node);
+      state.exp.push(node);
+      node.querySelector('.remove').onclick = ()=>{ node.remove(); state.exp = state.exp.filter(n=>n!==node); render(); saveToStorage(); };
+      $$('.company,.role,.place,.start,.end,textarea',node).forEach(el=> el.addEventListener('input', render));
+      if(pref.company) node.querySelector('.company').value = pref.company;
+      if(pref.role) node.querySelector('.role').value = pref.role;
+      if(pref.place) node.querySelector('.place').value = pref.place;
+      if(pref.start) node.querySelector('.start').value = pref.start;
+      if(pref.end) node.querySelector('.end').value = pref.end;
+      if(pref.bullets) node.querySelector('textarea').value = pref.bullets.join('\n');
+      render();
+    }
+
+    function addEdu(pref={}){
+      const t = $('#eduTemplate').content.cloneNode(true);
+      const wrap = document.createElement('div'); wrap.appendChild(t);
+      const node = wrap.firstElementChild; $('#eduList').appendChild(node);
+      state.edu.push(node);
+      node.querySelector('.remove').onclick = ()=>{ node.remove(); state.edu = state.edu.filter(n=>n!==node); render(); saveToStorage(); };
+      $$('.school,.degree,.place,.start,.end,.notes',node).forEach(el=> el.addEventListener('input', render));
+      if(pref.school) node.querySelector('.school').value = pref.school;
+      if(pref.degree) node.querySelector('.degree').value = pref.degree;
+      if(pref.place) node.querySelector('.place').value = pref.place;
+      if(pref.start) node.querySelector('.start').value = pref.start;
+      if(pref.end) node.querySelector('.end').value = pref.end;
+      if(pref.notes) node.querySelector('.notes').value = pref.notes;
+      render();
+    }
+
+    function addProj(pref={}){
+      const t = $('#projTemplate').content.cloneNode(true);
+      const wrap = document.createElement('div'); wrap.appendChild(t);
+      const node = wrap.firstElementChild; $('#projList').appendChild(node);
+      state.proj.push(node);
+      node.querySelector('.remove').onclick = ()=>{ node.remove(); state.proj = state.proj.filter(n=>n!==node); render(); saveToStorage(); };
+      $$('.pname,.plink,textarea',node).forEach(el=> el.addEventListener('input', render));
+      if(pref.pname) node.querySelector('.pname').value = pref.pname;
+      if(pref.plink) node.querySelector('.plink').value = pref.plink;
+      if(pref.bullets) node.querySelector('textarea').value = pref.bullets.join('\n');
+      render();
+    }
+
+    function getExpData(node){
+      if(!node.isConnected) return null;
+      return {
+        company: $('.company',node).value.trim(),
+        role: $('.role',node).value.trim(),
+        place: $('.place',node).value.trim(),
+        start: $('.start',node).value.trim(),
+        end: $('.end',node).value.trim(),
+        bullets: $('textarea',node).value
+      };
+    }
+    function getEduData(node){
+      if(!node.isConnected) return null;
+      return {
+        school: $('.school',node).value.trim(),
+        degree: $('.degree',node).value.trim(),
+        place: $('.place',node).value.trim(),
+        start: $('.start',node).value.trim(),
+        end: $('.end',node).value.trim(),
+        notes: $('.notes',node).value.trim()
+      };
+    }
+    function getProjData(node){
+      if(!node.isConnected) return null;
+      return {
+        pname: $('.pname',node).value.trim(),
+        plink: $('.plink',node).value.trim(),
+        bullets: $('textarea',node).value
+      };
+    }
+
+    function saveToStorage(){
+      const payload = {
+        basics: ['name','title','email','phone','location','website','summary','skills'].reduce((o,id)=>{o[id]=$('#'+id).value; return o;},{}),
+        exp: state.exp.filter(n=>n.isConnected).map(getExpData),
+        edu: state.edu.filter(n=>n.isConnected).map(getEduData),
+        proj: state.proj.filter(n=>n.isConnected).map(getProjData),
+        theme: document.body.classList.contains('light') ? 'light' : 'dark'
+      };
+      localStorage.setItem('resumeData', JSON.stringify(payload));
+    }
+
+    function loadFromStorage(){
+      const raw = localStorage.getItem('resumeData'); if(!raw) return;
+      try{
+        const data = JSON.parse(raw);
+        Object.entries(data.basics||{}).forEach(([k,v])=>{ const el = document.getElementById(k); if(el) el.value = v;});
+        // Clear existing prefills
+        $('#expList').innerHTML=''; state.exp=[]; (data.exp||[]).forEach(addExp);
+        $('#eduList').innerHTML=''; state.edu=[]; (data.edu||[]).forEach(addEdu);
+        $('#projList').innerHTML=''; state.proj=[]; (data.proj||[]).forEach(addProj);
+        if(data.theme==='dark') document.body.classList.remove('light');
+        render();
+      }catch(e){ console.warn('Load failed', e); }
+    }
+
+    function exportHTML(){
+      const title = ($('#name').value || 'My_Resume').replace(/\s+/g,'_');
+      const content = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>`+
+        `<style>body{font-family:Inter,system-ui,Segoe UI; margin:0; padding:42px; background:#fff; color:#111}`+
+        `.r-name{font-size:28px;font-weight:800}.r-title{color:#555}.r-section{margin-top:18px}`+
+        `.item{margin:10px 0}.top{display:flex;justify-content:space-between;font-weight:700}`+
+        `.meta{color:#666;font-size:12px}.bullets{margin:6px 0 0 18px}.bullets li{margin:3px 0}`+
+        `.tags{display:flex;flex-wrap:wrap;gap:8px}.t{background:#eef2ff;color:#2b3180;padding:5px 8px;border-radius:999px;font-size:12px}`+
+        `</style></head><body>`+
+        document.getElementById('paper').innerHTML+
+        `</body></html>`;
+      const blob = new Blob([content], {type: 'text/html'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = title + '.html'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
